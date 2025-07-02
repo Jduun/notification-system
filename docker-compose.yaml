@@ -1,0 +1,33 @@
+services:
+  notification_system:
+    build:
+      context: .
+    container_name: notification-system
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - notification_system_db
+    networks:
+      - app-network
+
+  notification_system_db:
+    image: postgres:17
+    container_name: notification-system-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ${DB_PATH}:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
