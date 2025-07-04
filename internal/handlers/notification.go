@@ -43,22 +43,41 @@ func (h *NotificationHTTPHandlers) GetNotificationByID(c *gin.Context) {
 }
 
 func (h *NotificationHTTPHandlers) GetNotifications(c *gin.Context) {
-	cursorCreatedAt, err := time.Parse(time.RFC3339, c.Query("cursor_created_at"))
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor creation date"})
-		return
+	cursorCreatedAtStr := c.Query("cursor_created_at")
+	cursorIDStr := c.Query("cursor_id")
+	limitStr := c.Query("limit")
+
+	cursorCreatedAt := time.Time{}
+	cursorID := uuid.Nil
+	var err error
+
+	const defaultLimit = 50
+	limit := defaultLimit
+
+	if cursorCreatedAtStr != "" {
+		cursorCreatedAt, err = time.Parse(time.RFC3339, c.Query("cursor_created_at"))
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor creation date"})
+			return
+		}
 	}
-	cursorId, err := uuid.Parse(c.Query("cursor_id"))
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor ID"})
-		return
+	if cursorIDStr != "" {
+		cursorID, err = uuid.Parse(c.Query("cursor_id"))
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor ID"})
+			return
+		}
 	}
-	limit, err := strconv.Atoi(c.Query("limit"))
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid limit value"})
-		return
+
+	if limitStr != "" {
+		limit, err = strconv.Atoi(c.Query("limit"))
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid limit value"})
+			return
+		}
 	}
-	notifications, err := h.notificationService.GetNotifications(c, cursorCreatedAt, cursorId, limit)
+
+	notifications, err := h.notificationService.GetNotifications(c, cursorCreatedAt, cursorID, limit)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

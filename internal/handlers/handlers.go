@@ -1,8 +1,6 @@
 package handlers
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "github.com/gin-gonic/gin"
 
 type NotificationHandlers interface {
 	GetNotificationByID(c *gin.Context)
