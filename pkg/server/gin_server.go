@@ -46,9 +46,9 @@ func (s *ginServer) Start() {
 		handlers.RequestIDMiddleware(),
 		handlers.SetLoggerMiddleware(),
 	)
+	notificationRoutes.GET("/", notificationHandlers.GetNotifications)
 	notificationRoutes.GET("/:id", notificationHandlers.GetNotificationByID)
-	notificationRoutes.GET("/batch", notificationHandlers.GetNotifications)
-	notificationRoutes.GET("/", notificationHandlers.GetNotificationsByIDs)
+	notificationRoutes.GET("/batch", notificationHandlers.GetNotificationsByIDs)
 	notificationRoutes.POST("/", notificationHandlers.SendNotification)
 	notificationRoutes.POST("/batch", notificationHandlers.SendNotifications)
 
