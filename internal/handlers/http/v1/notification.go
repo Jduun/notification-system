@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -42,32 +41,11 @@ func (h *NotificationHTTPHandlers) GetNotificationByID(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"notification": notification})
 }
 
-func (h *NotificationHTTPHandlers) GetNotifications(c *gin.Context) {
-	cursorCreatedAtStr := c.Query("cursor_created_at")
-	cursorIDStr := c.Query("cursor_id")
+func (h *NotificationHTTPHandlers) GetNewNotifications(c *gin.Context) {
 	limitStr := c.Query("limit")
-
-	cursorCreatedAt := time.Time{}
-	cursorID := uuid.Nil
-	var err error
-
 	const defaultLimit = 50
 	limit := defaultLimit
-
-	if cursorCreatedAtStr != "" {
-		cursorCreatedAt, err = time.Parse(time.RFC3339, c.Query("cursor_created_at"))
-		if err != nil {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor creation date"})
-			return
-		}
-	}
-	if cursorIDStr != "" {
-		cursorID, err = uuid.Parse(c.Query("cursor_id"))
-		if err != nil {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor ID"})
-			return
-		}
-	}
+	var err error
 
 	if limitStr != "" {
 		limit, err = strconv.Atoi(c.Query("limit"))
@@ -77,7 +55,7 @@ func (h *NotificationHTTPHandlers) GetNotifications(c *gin.Context) {
 		}
 	}
 
-	notifications, err := h.notificationService.GetNotifications(c, cursorCreatedAt, cursorID, limit)
+	notifications, err := h.notificationService.GetNewNotifications(c, limit)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -110,7 +88,8 @@ func (h *NotificationHTTPHandlers) GetNotificationsByIDs(c *gin.Context) {
 }
 
 func (h *NotificationHTTPHandlers) SendNotification(c *gin.Context) {
-	logger := slogger.GetLoggerFromContext(c).With("handler", "SendNotification")
+	const op = "handlers.SendNotification"
+	logger := slogger.GetLoggerFromContext(c).With(slog.String("op", op))
 
 	var notification dto.NotificationCreate
 	if err := c.ShouldBindJSON(&notification); err != nil {
