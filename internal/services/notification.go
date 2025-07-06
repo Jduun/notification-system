@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -19,11 +18,12 @@ type NotificationServiceImpl struct {
 }
 
 func NewNotificationServiceImpl(notificationRepo repositories.NotificationRepository) NotificationService {
-	return &NotificationServiceImpl{notificationRepo: notificationRepo}
+	return &NotificationServiceImpl{
+		notificationRepo: notificationRepo,
+	}
 }
 
 func (s *NotificationServiceImpl) GetNotificationByID(ctx context.Context, id uuid.UUID) (*dto.NotificationResponse, error) {
-
 	notification, err := s.notificationRepo.GetNotificationByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repositories.ErrNotFound) {
@@ -35,8 +35,8 @@ func (s *NotificationServiceImpl) GetNotificationByID(ctx context.Context, id uu
 	return notificationResponse, nil
 }
 
-func (s *NotificationServiceImpl) GetNotifications(ctx context.Context, cursorCreatedAt time.Time, cursorId uuid.UUID, limit int) ([]*dto.NotificationResponse, error) {
-	notifications, err := s.notificationRepo.GetNotifications(ctx, cursorCreatedAt, cursorId, limit)
+func (s *NotificationServiceImpl) GetNewNotifications(ctx context.Context, limit int) ([]*dto.NotificationResponse, error) {
+	notifications, err := s.notificationRepo.GetNewNotifications(ctx, limit)
 	if err != nil {
 		if errors.Is(err, repositories.ErrMaxBatchSizeExceeded) {
 			return nil, ErrTooManyRequestedNotifications

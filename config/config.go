@@ -9,15 +9,19 @@ import (
 )
 
 type Config struct {
-	AppEnv       AppEnv `env:"APP_ENV"`
-	AppPort      string `env:"APP_PORT"`
-	DbHost       string `env:"DB_HOST"`
-	DbPort       string `env:"DB_PORT"`
-	DbUsername   string `env:"DB_USERNAME"`
-	DbPassword   string `env:"DB_PASSWORD"`
-	DbName       string `env:"DB_NAME"`
-	DbPath       string `env:"DB_PATH"`
-	MaxBatchSize int    `env:"MAX_BATCH_SIZE"`
+	AppEnv                    AppEnv `env:"APP_ENV"`
+	AppPort                   uint16 `env:"APP_PORT"`
+	DBHost                    string `env:"DB_HOST"`
+	DBPort                    uint16 `env:"DB_PORT"`
+	DBUsername                string `env:"DB_USERNAME"`
+	DBPassword                string `env:"DB_PASSWORD"`
+	DBName                    string `env:"DB_NAME"`
+	DBPath                    string `env:"DB_PATH"`
+	MaxBatchSize              int    `env:"MAX_BATCH_SIZE"`
+	KafkaClientPort           uint16 `env:"KAFKA_CLIENT_PORT"`
+	NotificationTopicName     string `env:"NOTIFICATION_TOPIC_NAME"`
+	SenderHandlePeriodSeconds int    `env:"SENDER_HANDLE_PERIOD_SECONDS"`
+	Timeout                   int    `env:"TIMEOUT"`
 }
 
 type AppEnv string
@@ -44,12 +48,12 @@ func MustLoad() *Config {
 	return Cfg
 }
 
-func (cfg *Config) GetDbUrl() string {
+func (cfg *Config) GetDatabaseURL() string {
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable",
-		cfg.DbUsername,
-		cfg.DbPassword,
-		cfg.DbHost,
-		cfg.DbName,
+		cfg.DBUsername,
+		cfg.DBPassword,
+		cfg.DBHost,
+		cfg.DBName,
 	)
 	return dbUrl
 }

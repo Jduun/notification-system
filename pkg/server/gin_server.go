@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"notification_system/config"
-	"notification_system/internal/handlers"
+	"notification_system/internal/handlers/http/v1"
 	"notification_system/internal/repositories"
 	"notification_system/internal/services"
 	"notification_system/pkg/database"
@@ -14,13 +16,14 @@ import (
 )
 
 type ginServer struct {
-	router *gin.Engine
-	db     *database.PostgresDatabase
-	cfg    *config.Config
+	router     *gin.Engine
+	db         *database.PostgresDatabase
+	cfg        *config.Config
+	httpServer *http.Server
 }
 
-func NewGinServer(cfg *config.Config, db *database.PostgresDatabase) Server {
-	switch config.Cfg.AppEnv {
+func NewGinServer(cfg *config.Config, db *database.PostgresDatabase) *ginServer {
+	switch cfg.AppEnv {
 	case config.Local, config.Dev:
 		gin.SetMode(gin.DebugMode)
 	case config.Prod:
@@ -28,33 +31,42 @@ func NewGinServer(cfg *config.Config, db *database.PostgresDatabase) Server {
 	default:
 		gin.SetMode(gin.ReleaseMode)
 	}
+
 	router := gin.Default()
-	return &ginServer{
-		router: router,
-		db:     db,
-		cfg:    cfg,
-	}
-}
 
-func (s *ginServer) Start() {
-	notificationRepo := repositories.NewNotificationPostgresRepository(s.db)
+	notificationRepo := repositories.NewNotificationPostgresRepository(db)
 	notificationService := services.NewNotificationServiceImpl(notificationRepo)
-	notificationHandlers := handlers.NewNotificationHTTPHandlers(notificationService)
+	notificationHandlers := v1.NewNotificationHTTPHandlers(notificationService)
 
-	notificationRoutes := s.router.Group(
+	notificationRoutes := router.Group(
 		"/notifications",
-		handlers.RequestIDMiddleware(),
-		handlers.SetLoggerMiddleware(),
+		v1.RequestIDMiddleware(),
+		v1.SetLoggerMiddleware(),
 	)
-	notificationRoutes.GET("/", notificationHandlers.GetNotifications)
-	notificationRoutes.GET("/:id", notificationHandlers.GetNotificationByID)
+	notificationRoutes.GET("/new", notificationHandlers.GetNewNotifications)
 	notificationRoutes.GET("/batch", notificationHandlers.GetNotificationsByIDs)
+	notificationRoutes.GET("/:id", notificationHandlers.GetNotificationByID)
 	notificationRoutes.POST("/", notificationHandlers.SendNotification)
 	notificationRoutes.POST("/batch", notificationHandlers.SendNotifications)
 
-	slog.Info("starting gin server")
-	err := s.router.Run(fmt.Sprintf(":%s", s.cfg.AppPort))
-	if err != nil {
-		slog.Error("cannot run gin server: %s", err)
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.AppPort),
+		Handler: router,
 	}
+
+	return &ginServer{
+		router:     router,
+		db:         db,
+		cfg:        cfg,
+		httpServer: httpServer,
+	}
+}
+func (s *ginServer) Run() error {
+	slog.Info("Starting Gin server")
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *ginServer) Shutdown(ctx context.Context) error {
+	slog.Info("Shutting down Gin server...")
+	return s.httpServer.Shutdown(ctx)
 }

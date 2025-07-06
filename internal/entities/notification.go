@@ -16,3 +16,15 @@ type Notification struct {
 	CreatedAt    time.Time  `db:"created_at"`
 	SentAt       *time.Time `db:"sent_at"`
 }
+
+const (
+	DeliveryTypeEmail    = "email"
+	DeliveryTypeSMS      = "sms"
+	DeliveryTypeTelegram = "telegram"
+
+	StatusPending   = "pending"
+	StatusInQueue   = "in_queue"
+	StatusDelivered = "delivered"
+	StatusFailed    = "failed"
+	StatusRetrying  = "retrying"
+)

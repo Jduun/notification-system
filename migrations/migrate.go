@@ -1,8 +1,8 @@
 package migrations
 
 import (
-	"log"
-	"notification_system/config"
+	"errors"
+	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -10,17 +10,17 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 )
 
-func Migrate() {
+func Migrate(databaseURL string) {
 	m, err := migrate.New(
 		"file://migrations",
-		config.Cfg.GetDbUrl(),
+		databaseURL,
 	)
 	if err != nil {
-		log.Fatalf("Migration error: %s", err)
+		slog.Error("Migration error: %s", slog.Any("error", err))
 	}
 
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Migration error: %s", err)
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		slog.Error("Migration error: %s", slog.Any("error", err))
 	}
 }

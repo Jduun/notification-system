@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -32,32 +31,20 @@ func (r *NotificationPostgresRepository) GetNotificationByID(ctx context.Context
 	return notifications[0], nil
 }
 
-func (r *NotificationPostgresRepository) GetNotifications(ctx context.Context, cursorCreatedAt time.Time, cursorId uuid.UUID, limit int) ([]*entities.Notification, error) {
+func (r *NotificationPostgresRepository) GetNewNotifications(ctx context.Context, limit int) ([]*entities.Notification, error) {
 	if limit > config.Cfg.MaxBatchSize {
 		return nil, ErrMaxBatchSizeExceeded
 	}
-	var (
-		query string
-		args  []any
-	)
-	if cursorId == uuid.Nil && cursorCreatedAt.IsZero() {
-		query = `
-			select *
-			from notifications
-			order by created_at, id
-			limit $1`
-		args = []any{limit}
-	} else {
-		query = `
-			select *
-			from notifications
-			where (created_at, id) > ($1, $2)
-			order by created_at, id
-			limit $3`
-		args = []any{cursorCreatedAt, cursorId, limit}
-	}
+
+	query := `
+		select *
+		from notifications
+		where status = $1
+		order by created_at
+		limit $2
+	`
 	notifications := make([]*entities.Notification, 0, limit)
-	rows, err := r.db.Pool.Query(ctx, query, args...)
+	rows, err := r.db.Pool.Query(ctx, query, entities.StatusPending, limit)
 	if err != nil {
 		return nil, fmt.Errorf("NotificationPostgresRepository.GetNotifications query error: %w", err)
 	}
@@ -185,6 +172,22 @@ func (r *NotificationPostgresRepository) CreateNotifications(ctx context.Context
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("NotificationPostgresRepository.CreateNotifications rows error: %w", err)
+	}
+	return nil
+}
+
+func (r *NotificationPostgresRepository) UpdateNotificationsStatus(ctx context.Context, ids []uuid.UUID, status string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	query := `
+		update notifications
+		set status = $1
+		where id = any($2)
+	`
+	_, err := r.db.Pool.Exec(ctx, query, status, ids)
+	if err != nil {
+		return fmt.Errorf("NotificationPostgresRepository.UpdateNotificationsStatus error: %w", err)
 	}
 	return nil
 }
