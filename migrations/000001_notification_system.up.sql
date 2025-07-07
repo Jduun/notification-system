@@ -9,6 +9,5 @@ create table notifications (
     retries smallint not null default 0,
     created_at timestamp not null default now(),
     sent_at timestamp,
-    check (delivery_type in ('email', 'sms', 'telegram')),
-    check (status in ('delivered', 'pending', 'in_queue', 'retrying', 'failed'))
+    check (status in ('delivered', 'pending', 'in_queue', 'failed'))
 );

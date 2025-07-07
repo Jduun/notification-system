@@ -32,7 +32,7 @@ func (r *NotificationPostgresRepository) GetNotificationByID(ctx context.Context
 }
 
 func (r *NotificationPostgresRepository) GetNewNotifications(ctx context.Context, limit int) ([]*entities.Notification, error) {
-	if limit > config.Cfg.MaxBatchSize {
+	if limit > int(config.Cfg.MaxBatchSize) {
 		return nil, ErrMaxBatchSizeExceeded
 	}
 
@@ -77,7 +77,7 @@ func (r *NotificationPostgresRepository) GetNotificationsByIDs(ctx context.Conte
 	if len(ids) == 0 {
 		return []*entities.Notification{}, nil
 	}
-	if len(ids) > config.Cfg.MaxBatchSize {
+	if len(ids) > int(config.Cfg.MaxBatchSize) {
 		return nil, ErrMaxBatchSizeExceeded
 	}
 	placeholders := make([]string, len(ids))
@@ -132,7 +132,7 @@ func (r *NotificationPostgresRepository) CreateNotifications(ctx context.Context
 	if len(notifications) == 0 {
 		return nil
 	}
-	if len(notifications) > config.Cfg.MaxBatchSize {
+	if len(notifications) > int(config.Cfg.MaxBatchSize) {
 		return ErrMaxBatchSizeExceeded
 	}
 
@@ -188,6 +188,19 @@ func (r *NotificationPostgresRepository) UpdateNotificationsStatus(ctx context.C
 	_, err := r.db.Pool.Exec(ctx, query, status, ids)
 	if err != nil {
 		return fmt.Errorf("NotificationPostgresRepository.UpdateNotificationsStatus error: %w", err)
+	}
+	return nil
+}
+
+func (r *NotificationPostgresRepository) UpdateNotificationRetries(ctx context.Context, id uuid.UUID, retries uint8) error {
+	query := `
+		update notifications
+		set retries = $1
+		where id = $2
+	`
+	_, err := r.db.Pool.Exec(ctx, query, retries, id)
+	if err != nil {
+		return fmt.Errorf("NotificationPostgresRepository.UpdateNotificationRetries error: %w", err)
 	}
 	return nil
 }

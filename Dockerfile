@@ -6,7 +6,8 @@ COPY . .
 RUN go build /app/cmd/app/main.go
 
 FROM debian:bookworm-slim
-WORKDIR /app
+WORKDIR /
+RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=builder /app/main ./main
 COPY --from=builder /app/migrations ./migrations
 CMD [ "./main" ]

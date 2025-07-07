@@ -18,13 +18,10 @@ type Notification struct {
 }
 
 const (
-	DeliveryTypeEmail    = "email"
-	DeliveryTypeSMS      = "sms"
-	DeliveryTypeTelegram = "telegram"
+	DeliveryTypeEmail = "email"
 
 	StatusPending   = "pending"
 	StatusInQueue   = "in_queue"
 	StatusDelivered = "delivered"
 	StatusFailed    = "failed"
-	StatusRetrying  = "retrying"
 )

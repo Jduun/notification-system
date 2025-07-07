@@ -9,7 +9,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - notification_system_db
+      kafka:
+        condition: service_healthy
+      notification_system_db:
+        condition: service_started
     networks:
       - app-network
 
@@ -58,6 +61,12 @@ services:
       - /data:/var/lib/kafka
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

@@ -17,11 +17,15 @@ type Config struct {
 	DBPassword                string `env:"DB_PASSWORD"`
 	DBName                    string `env:"DB_NAME"`
 	DBPath                    string `env:"DB_PATH"`
-	MaxBatchSize              int    `env:"MAX_BATCH_SIZE"`
+	MaxBatchSize              uint   `env:"MAX_BATCH_SIZE"`
+	MaxRetries                uint8  `env:"MAX_RETRIES"`
 	KafkaClientPort           uint16 `env:"KAFKA_CLIENT_PORT"`
 	NotificationTopicName     string `env:"NOTIFICATION_TOPIC_NAME"`
+	ConsumerGroupID           string `env:"CONSUMER_GROUP_ID"`
 	SenderHandlePeriodSeconds int    `env:"SENDER_HANDLE_PERIOD_SECONDS"`
 	Timeout                   int    `env:"TIMEOUT"`
+	Gmail                     string `env:"GMAIL"`
+	GmailAppPassword          string `env:"GMAIL_APP_PASSWORD"`
 }
 
 type AppEnv string
@@ -48,7 +52,7 @@ func MustLoad() *Config {
 	return Cfg
 }
 
-func (cfg *Config) GetDatabaseURL() string {
+func (cfg *Config) GetDBURL() string {
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable",
 		cfg.DBUsername,
 		cfg.DBPassword,
