@@ -58,7 +58,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: ${CLUSTER_ID}
     volumes:
-      - /data:/var/lib/kafka
+      - ${KAFKA_PATH}:/var/lib/kafka
     networks:
       - app-network
     healthcheck:

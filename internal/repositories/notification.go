@@ -123,11 +123,6 @@ func (r *NotificationPostgresRepository) GetNotificationsByIDs(ctx context.Conte
 	return notifications, nil
 }
 
-func (r *NotificationPostgresRepository) CreateNotification(ctx context.Context, notification *entities.Notification) error {
-	err := r.CreateNotifications(ctx, []*entities.Notification{notification})
-	return err
-}
-
 func (r *NotificationPostgresRepository) CreateNotifications(ctx context.Context, notifications []*entities.Notification) error {
 	if len(notifications) == 0 {
 		return nil

@@ -59,33 +59,7 @@ func (s *NotificationServiceImpl) GetNotificationsByIDs(ctx context.Context, ids
 	return notificationsResponse, nil
 }
 
-func (s *NotificationServiceImpl) SendNotification(ctx context.Context, notification *dto.NotificationCreate) (uuid.UUID, error) {
-	logger := slogger.GetLoggerFromContext(ctx)
-	notificationEntity := entities.Notification{
-		DeliveryType: notification.DeliveryType,
-		Recipient:    notification.Recipient,
-		Content:      notification.Content,
-	}
-
-	logger.Debug("sending single notification",
-		slog.String("recipient", notification.Recipient),
-		slog.String("delivery_type", notification.DeliveryType),
-	)
-
-	err := s.notificationRepo.CreateNotification(ctx, &notificationEntity)
-	if err != nil {
-		logger.Error("failed to send notification", slog.Any("error", err))
-		return uuid.Nil, ErrCannotSendNotification
-	}
-
-	logger.Info("notification sent successfully",
-		slog.String("id", notificationEntity.ID.String()),
-	)
-
-	return notificationEntity.ID, nil
-}
-
-func (s *NotificationServiceImpl) SendNotifications(ctx context.Context, notifications []*dto.NotificationCreate) ([]uuid.UUID, error) {
+func (s *NotificationServiceImpl) CreateNotifications(ctx context.Context, notifications []*dto.NotificationCreate) ([]uuid.UUID, error) {
 	logger := slogger.GetLoggerFromContext(ctx)
 
 	logger.Debug("sending notifications",
@@ -106,12 +80,12 @@ func (s *NotificationServiceImpl) SendNotifications(ctx context.Context, notific
 			logger.Warn("too many notifications in batch",
 				slog.Int("count", len(notifications)),
 			)
-			return nil, ErrTooManyNotificationsToSend
+			return nil, ErrTooManyNotificationsToCreate
 		}
 		logger.Error("failed to send notifications",
 			slog.Any("error", err),
 		)
-		return nil, ErrCannotSendNotifications
+		return nil, ErrCannotCreateNotifications
 	}
 	ids := make([]uuid.UUID, len(notifications))
 	for i, notification := range notificationEntities {

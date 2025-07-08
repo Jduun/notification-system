@@ -46,8 +46,7 @@ func NewGinServer(cfg *config.Config, db *database.PostgresDatabase) *ginServer 
 	notificationRoutes.GET("/new", notificationHandlers.GetNewNotifications)
 	notificationRoutes.GET("/batch", notificationHandlers.GetNotificationsByIDs)
 	notificationRoutes.GET("/:id", notificationHandlers.GetNotificationByID)
-	notificationRoutes.POST("/", notificationHandlers.SendNotification)
-	notificationRoutes.POST("/batch", notificationHandlers.SendNotifications)
+	notificationRoutes.POST("/", notificationHandlers.CreateNotifications)
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.AppPort),

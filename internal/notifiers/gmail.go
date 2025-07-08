@@ -1,6 +1,7 @@
 package notifiers
 
 import (
+	"fmt"
 	"net/smtp"
 
 	"notification_system/config"
@@ -16,7 +17,7 @@ func (notifier *GmailNotifier) Notify(to, message string) error {
 	auth := smtp.PlainAuth("", notifier.From, config.Cfg.GmailAppPassword, smtpHost)
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, notifier.From, []string{to}, []byte(message))
 	if err != nil {
-		return err
+		return fmt.Errorf("notifiers.gmail error: %w", err)
 	}
 	return nil
 }

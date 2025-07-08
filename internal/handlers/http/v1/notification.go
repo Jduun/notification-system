@@ -87,35 +87,11 @@ func (h *NotificationHTTPHandlers) GetNotificationsByIDs(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"notifications": notifications})
 }
 
-func (h *NotificationHTTPHandlers) SendNotification(c *gin.Context) {
-	const op = "handlers.SendNotification"
+func (h *NotificationHTTPHandlers) CreateNotifications(c *gin.Context) {
+	const op = "handlers.CreateNotifications"
 	logger := slogger.GetLoggerFromContext(c).With(slog.String("op", op))
 
-	var notification dto.NotificationCreate
-	if err := c.ShouldBindJSON(&notification); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
-
-	logger.Info("sending notification")
-
-	id, err := h.notificationService.SendNotification(c, &notification)
-	if err != nil {
-		if errors.Is(err, services.ErrTooManyNotificationsToSend) {
-			logger.Warn("too many notifications", slog.Any("error", err))
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		logger.Error("failed to send notification", slog.Any("error", err))
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	logger.Info("notification sent successfully", slog.Any("id", id))
-	c.IndentedJSON(http.StatusOK, gin.H{"id": id})
-}
-
-func (h *NotificationHTTPHandlers) SendNotifications(c *gin.Context) {
+	logger.Info("start to create notifications")
 	var notificationsCreate []dto.NotificationCreate
 	if err := c.ShouldBindJSON(&notificationsCreate); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
@@ -125,14 +101,16 @@ func (h *NotificationHTTPHandlers) SendNotifications(c *gin.Context) {
 	for i := range notificationsCreate {
 		notifications[i] = &notificationsCreate[i]
 	}
-	ids, err := h.notificationService.SendNotifications(c, notifications)
+	ids, err := h.notificationService.CreateNotifications(c, notifications)
 	if err != nil {
-		if errors.Is(err, services.ErrTooManyNotificationsToSend) {
+		if errors.Is(err, services.ErrTooManyNotificationsToCreate) {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		logger.Error("failed to create notifications", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	logger.Info("notifications created successfully")
 	c.IndentedJSON(http.StatusOK, gin.H{"ids": ids})
 }

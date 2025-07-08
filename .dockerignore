@@ -1,0 +1,11 @@
+.idea/
+
+tests/
+
+.env
+.env.example
+
+.git/
+.gitignore
+
+README.md

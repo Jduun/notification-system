@@ -3,6 +3,7 @@ module notification_system
 go 1.24.0
 
 require (
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.11.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
