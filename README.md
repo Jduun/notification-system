@@ -19,8 +19,8 @@ Go, Gin, PostgreSQL, Apache Kafka, Docker
 
 2. Set environment variables:
    ```bash
-      cp .env.example .env
-      nano .env
+   cp .env.example .env
+   nano .env
    ```
 
 3. Build application:
