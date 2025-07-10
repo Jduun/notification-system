@@ -8,7 +8,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"notification_system/internal/dto"
-	mocks_repositories "notification_system/internal/repositories/mocks"
+	"notification_system/internal/repositories/mocks"
 )
 
 func TestNotificationServiceImpl_CreateNotifications(t *testing.T) {
@@ -39,7 +39,7 @@ func TestNotificationServiceImpl_CreateNotifications(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			mockRepo := mocks_repositories.NewMockNotificationRepository(ctrl)
+			mockRepo := repomocks.NewMockNotificationRepository(ctrl)
 			mockRepo.
 				EXPECT().
 				CreateNotifications(tt.args.ctx, gomock.Any()).

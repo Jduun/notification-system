@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/google/uuid"
 
 	"notification_system/internal/dto"
 	"notification_system/internal/entities"
@@ -32,8 +33,8 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 	notificationCount := 10
 	payload := "[" + strings.Repeat(notification+",", notificationCount-1) + notification + "]"
 
-	urlSendNotifications := fmt.Sprintf("%s/notifications", host)
-	resp, err := http.Post(urlSendNotifications, "application/json", bytes.NewBuffer([]byte(payload)))
+	urlCreateNotifications := fmt.Sprintf("%s/api/v1/notifications", host)
+	resp, err := http.Post(urlCreateNotifications, "application/json", bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		t.Errorf("request failed: %v", err)
 		return
@@ -46,24 +47,22 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 		t.Errorf("failed to read response body: %v", err)
 		return
 	}
-	var sendNotificationsResponse struct {
-		IDs []string `json:"ids"`
-	}
-	if err = json.Unmarshal(bodyBytes, &sendNotificationsResponse); err != nil {
+	var IDs []uuid.UUID
+	if err = json.Unmarshal(bodyBytes, &IDs); err != nil {
 		t.Errorf("failed to parse response JSON: %v", err)
 		return
 	}
 
+	urlGetNotificationsByIDs := fmt.Sprintf("%s/api/v1/notifications/batch?ids=", host)
+	for i, ID := range IDs {
+		urlGetNotificationsByIDs += ID.String()
+		if i != notificationCount-1 {
+			urlGetNotificationsByIDs += ","
+		}
+	}
 	deadline := time.Now().Add(10 * time.Second)
 	allDelivered := true
 	for time.Now().Before(deadline) {
-		urlGetNotificationsByIDs := fmt.Sprintf("%s/notifications/batch?ids=", host)
-		for i, id := range sendNotificationsResponse.IDs {
-			urlGetNotificationsByIDs += id
-			if i != notificationCount-1 {
-				urlGetNotificationsByIDs += ","
-			}
-		}
 		resp, err = http.Get(urlGetNotificationsByIDs)
 		if err != nil {
 			t.Errorf("request failed: %v", err)
@@ -74,15 +73,13 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 			t.Errorf("failed to read response body: %v", err)
 			return
 		}
-		var getNotificationsResponse struct {
-			Notifications []dto.NotificationResponse `json:"notifications"`
-		}
-		if err = json.Unmarshal(bodyBytes, &getNotificationsResponse); err != nil {
+		var notifications []dto.Notification
+		if err = json.Unmarshal(bodyBytes, &notifications); err != nil {
 			t.Errorf("failed to parse response JSON: %v", err)
 			return
 		}
 		allDelivered = true
-		for _, notification := range getNotificationsResponse.Notifications {
+		for _, notification := range notifications {
 			if notification.Status != entities.StatusDelivered {
 				allDelivered = false
 				continue
