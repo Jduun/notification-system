@@ -16,44 +16,44 @@ import (
 	"notification_system/pkg/database"
 )
 
-type Receiver struct {
+type NotificationReceiver struct {
 	consumer         *kafka.Consumer
-	topic            string
 	notificationRepo repositories.NotificationRepository
+	cfg              *config.Config
 }
 
-func NewReceiver(topic string, groupID string, db *database.PostgresDatabase) *Receiver {
-	const op = "messaging.sender.NewReceiver"
+func NewNotificationReceiver(cfg *config.Config, db *database.PostgresDatabase) *NotificationReceiver {
+	const op = "messaging.sender.NewNotificationReceiver"
 	log := slog.With(slog.String("op", op))
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "kafka",
-		"group.id":          groupID,
+		"bootstrap.servers": "kafka:9092",
+		"group.id":          cfg.ConsumerGroupID,
 		"auto.offset.reset": "earliest",
 	})
 	if err != nil {
 		log.Error("error connecting to kafka", slog.Any("error", err))
 		panic("failed to connect kafka")
 	}
-	err = consumer.SubscribeTopics([]string{topic}, nil)
+	err = consumer.SubscribeTopics([]string{cfg.NotificationTopicName}, nil)
 	if err != nil {
 		log.Error("error subscribing to topic", slog.Any("error", err))
 		panic("failed to subscribe to topic")
 	}
 	notificationRepo := repositories.NewNotificationPostgresRepository(db)
-	return &Receiver{
+	return &NotificationReceiver{
 		consumer:         consumer,
-		topic:            topic,
 		notificationRepo: notificationRepo,
+		cfg:              cfg,
 	}
 }
 
-func (r *Receiver) StartProcessNotifications(ctx context.Context) {
+func (r *NotificationReceiver) StartProcessNotifications(ctx context.Context) {
 	const op = "messaging.receiver.StartProcessNotifications"
 	log := slog.With(slog.String("op", op))
 
 	gmailNotifier := notifiers.GmailNotifier{
-		From: config.Cfg.Gmail,
+		From: r.cfg.Gmail,
 	}
 
 	go func() {
@@ -88,7 +88,7 @@ func (r *Receiver) StartProcessNotifications(ctx context.Context) {
 					} else {
 						log.Error("error sending notification", slog.Any("error", err))
 						newStatus := entities.StatusPending
-						if notification.Retries > config.Cfg.MaxRetries {
+						if notification.Retries > r.cfg.MaxRetries {
 							newStatus = entities.StatusFailed
 						}
 						err = r.notificationRepo.UpdateNotificationsStatus(ctx, []uuid.UUID{notification.ID}, newStatus)
@@ -108,7 +108,7 @@ func (r *Receiver) StartProcessNotifications(ctx context.Context) {
 	}()
 }
 
-func (r *Receiver) Close() error {
+func (r *NotificationReceiver) Close() error {
 	err := r.consumer.Close()
 	return err
 }

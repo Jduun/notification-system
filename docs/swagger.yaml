@@ -1,0 +1,165 @@
+definitions:
+  dto.Notification:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      delivery_type:
+        type: string
+      id:
+        type: string
+      recipient:
+        type: string
+      retries:
+        type: integer
+      sent_at:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.NotificationCreate:
+    properties:
+      content:
+        type: string
+      delivery_type:
+        type: string
+      recipient:
+        type: string
+    type: object
+  v1.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/notifications:
+    post:
+      consumes:
+      - application/json
+      description: Accepts a list of notifications to create
+      parameters:
+      - description: Data to create notifications
+        in: body
+        name: notifications
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dto.NotificationCreate'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Create multiple notifications
+      tags:
+      - notifications
+  /api/v1/notifications/{id}:
+    get:
+      description: Get a notification by its ID
+      parameters:
+      - description: Notification UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Notification'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Get a notification by its ID
+      tags:
+      - notifications
+  /api/v1/notifications/batch:
+    get:
+      description: Get notifications using a comma-separated list of UUIDs
+      parameters:
+      - description: Comma-separated list of notification UUIDs
+        in: query
+        name: ids
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Notification'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Get multiple notifications by their IDs
+      tags:
+      - notifications
+  /api/v1/notifications/new:
+    get:
+      description: Get a limited number of the notifications with pending status
+      parameters:
+      - default: 50
+        description: Limit of notifications to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Notification'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Get new notifications
+      tags:
+      - notifications
+swagger: "2.0"

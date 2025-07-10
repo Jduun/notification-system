@@ -10,3 +10,7 @@ type NotificationHandlers interface {
 	GetNotificationsByIDs(c *gin.Context)
 	CreateNotifications(c *gin.Context)
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}

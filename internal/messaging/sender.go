@@ -3,30 +3,30 @@ package messaging
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/google/uuid"
 
+	"notification_system/config"
 	"notification_system/internal/entities"
 	"notification_system/internal/repositories"
 	"notification_system/pkg/database"
 )
 
-type Sender struct {
+type NotificationSender struct {
 	producer         *kafka.Producer
-	topic            string
 	notificationRepo repositories.NotificationRepository
+	cfg              *config.Config
 }
 
-func NewSender(topic string, db *database.PostgresDatabase) *Sender {
-	const op = "messaging.sender.NewSender"
+func NewNotificationSender(cfg *config.Config, db *database.PostgresDatabase) *NotificationSender {
+	const op = "messaging.sender.NewNotificationSender"
 	log := slog.With(slog.String("op", op))
 
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": fmt.Sprintf("kafka:9092"),
+		"bootstrap.servers": "kafka:9092",
 		"acks":              "all",
 	})
 	if err != nil {
@@ -34,20 +34,20 @@ func NewSender(topic string, db *database.PostgresDatabase) *Sender {
 		panic("failed to connect kafka")
 	}
 	notificationRepo := repositories.NewNotificationPostgresRepository(db)
-	return &Sender{
+	return &NotificationSender{
 		producer:         producer,
-		topic:            topic,
 		notificationRepo: notificationRepo,
+		cfg:              cfg,
 	}
 }
 
-func (s *Sender) SendMessages(messages [][]byte) error {
-	const op = "messaging.sender.SendMessages"
+func (s *NotificationSender) SendNotificationsToKafka(messages [][]byte) error {
+	const op = "messaging.sender.SendNotificationsToKafka"
 	log := slog.With(slog.String("op", op))
 
 	for _, message := range messages {
 		err := s.producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &s.topic, Partition: kafka.PartitionAny},
+			TopicPartition: kafka.TopicPartition{Topic: &s.cfg.NotificationTopicName, Partition: kafka.PartitionAny},
 			Value:          message,
 		}, nil)
 		if err != nil {
@@ -61,7 +61,7 @@ func (s *Sender) SendMessages(messages [][]byte) error {
 	return nil
 }
 
-func (s *Sender) StartProcessNotifications(ctx context.Context, handlePeriod time.Duration) {
+func (s *NotificationSender) StartProcessNotifications(ctx context.Context, handlePeriod time.Duration) {
 	const op = "messaging.sender.StartProcessNotifications"
 	log := slog.With(slog.String("op", op))
 
@@ -75,7 +75,7 @@ func (s *Sender) StartProcessNotifications(ctx context.Context, handlePeriod tim
 				return
 			case <-ticker.C:
 			}
-			const limit = 50
+			limit := s.cfg.MaxBatchSize
 			notifications, err := s.notificationRepo.GetNewNotifications(ctx, limit)
 			if err != nil {
 				log.Error("failed to get new notifications", slog.Any("error", err))
@@ -92,7 +92,7 @@ func (s *Sender) StartProcessNotifications(ctx context.Context, handlePeriod tim
 				}
 				notificationsBytes[i] = notificationBytes
 			}
-			err = s.SendMessages(notificationsBytes)
+			err = s.SendNotificationsToKafka(notificationsBytes)
 			if err != nil {
 				log.Error("failed to enqueue kafka message", slog.Any("error", err))
 			} else {
@@ -105,6 +105,6 @@ func (s *Sender) StartProcessNotifications(ctx context.Context, handlePeriod tim
 	}()
 }
 
-func (s *Sender) Close() {
+func (s *NotificationSender) Close() {
 	s.producer.Close()
 }
