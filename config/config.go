@@ -19,7 +19,7 @@ type Config struct {
 	DBPath                    string `env:"DB_PATH"`
 	MaxBatchSize              uint   `env:"MAX_BATCH_SIZE"`
 	MaxRetries                uint8  `env:"MAX_RETRIES"`
-	KafkaClientPort           uint16 `env:"KAFKA_CLIENT_PORT"`
+	KafkaPort                 uint16 `env:"KAFKA_PORT"`
 	NotificationTopicName     string `env:"NOTIFICATION_TOPIC_NAME"`
 	ConsumerGroupID           string `env:"CONSUMER_GROUP_ID"`
 	SenderHandlePeriodSeconds int    `env:"SENDER_HANDLE_PERIOD_SECONDS"`
@@ -47,7 +47,7 @@ func MustLoad() *Config {
 		if err := cleanenv.ReadEnv(Cfg); err != nil {
 			log.Fatalf("Cannot read .env file: %s", err)
 		}
-		fmt.Println(fmt.Sprintf("APP_PORT: %s", Cfg.AppPort))
+		fmt.Printf("APP_PORT: %d", Cfg.AppPort)
 	})
 	return Cfg
 }

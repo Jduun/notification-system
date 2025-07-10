@@ -11,6 +11,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/sytallax/prettylog v0.1.0
+	go.uber.org/mock v0.4.0
 )
 
 require (
