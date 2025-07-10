@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ import (
 )
 
 var (
-	host = "http://localhost:8080"
+	host = fmt.Sprintf("http://localhost:%s", os.Getenv("APP_PORT"))
 )
 
 func TestNotificationSystem_SendNotifications(t *testing.T) {
@@ -28,8 +29,8 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 		"recipient": "%s",
 		"content": "%s"
 	}`, email, message)
-	count := 10
-	payload := "[" + strings.Repeat(notification+",", count-1) + notification + "]"
+	notificationCount := 10
+	payload := "[" + strings.Repeat(notification+",", notificationCount-1) + notification + "]"
 
 	urlSendNotifications := fmt.Sprintf("%s/notifications", host)
 	resp, err := http.Post(urlSendNotifications, "application/json", bytes.NewBuffer([]byte(payload)))
@@ -54,11 +55,12 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 	}
 
 	deadline := time.Now().Add(10 * time.Second)
+	allDelivered := true
 	for time.Now().Before(deadline) {
 		urlGetNotificationsByIDs := fmt.Sprintf("%s/notifications/batch?ids=", host)
 		for i, id := range sendNotificationsResponse.IDs {
 			urlGetNotificationsByIDs += id
-			if i != count-1 {
+			if i != notificationCount-1 {
 				urlGetNotificationsByIDs += ","
 			}
 		}
@@ -79,7 +81,7 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 			t.Errorf("failed to parse response JSON: %v", err)
 			return
 		}
-		allDelivered := true
+		allDelivered = true
 		for _, notification := range getNotificationsResponse.Notifications {
 			if notification.Status != entities.StatusDelivered {
 				allDelivered = false
@@ -89,6 +91,10 @@ func TestNotificationSystem_SendNotifications(t *testing.T) {
 		if allDelivered {
 			break
 		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	if !allDelivered {
+		t.Errorf("failed to deliver all notifications")
 	}
 
 	err = resp.Body.Close()
