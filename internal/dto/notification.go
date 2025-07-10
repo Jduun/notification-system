@@ -15,7 +15,7 @@ type (
 		Content      string `json:"content"`
 	}
 
-	NotificationResponse struct {
+	Notification struct {
 		ID           uuid.UUID  `json:"id"`
 		DeliveryType string     `json:"delivery_type"`
 		Recipient    string     `json:"recipient"`
@@ -27,8 +27,8 @@ type (
 	}
 )
 
-func NotificationEntityToDTO(notification *entities.Notification) *NotificationResponse {
-	return &NotificationResponse{
+func NotificationEntityToDTO(notification *entities.Notification) *Notification {
+	return &Notification{
 		ID:           notification.ID,
 		DeliveryType: notification.DeliveryType,
 		Recipient:    notification.Recipient,
@@ -40,8 +40,8 @@ func NotificationEntityToDTO(notification *entities.Notification) *NotificationR
 	}
 }
 
-func NotificationEntitiesToDTOs(notifications []*entities.Notification) []*NotificationResponse {
-	notificationsResponse := make([]*NotificationResponse, len(notifications))
+func NotificationEntitiesToDTOs(notifications []*entities.Notification) []*Notification {
+	notificationsResponse := make([]*Notification, len(notifications))
 	for i, notification := range notifications {
 		notificationsResponse[i] = NotificationEntityToDTO(notification)
 	}

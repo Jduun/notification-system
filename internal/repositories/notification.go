@@ -31,8 +31,8 @@ func (r *NotificationPostgresRepository) GetNotificationByID(ctx context.Context
 	return notifications[0], nil
 }
 
-func (r *NotificationPostgresRepository) GetNewNotifications(ctx context.Context, limit int) ([]*entities.Notification, error) {
-	if limit > int(config.Cfg.MaxBatchSize) {
+func (r *NotificationPostgresRepository) GetNewNotifications(ctx context.Context, limit uint) ([]*entities.Notification, error) {
+	if limit > config.Cfg.MaxBatchSize {
 		return nil, ErrMaxBatchSizeExceeded
 	}
 
@@ -175,11 +175,12 @@ func (r *NotificationPostgresRepository) UpdateNotificationsStatus(ctx context.C
 	if len(ids) == 0 {
 		return nil
 	}
-	query := `
+	query := fmt.Sprintf(`
 		update notifications
-		set status = $1
+		set status = $1,
+			sent_at = case when $1 = '%s' then now() else sent_at end
 		where id = any($2)
-	`
+	`, entities.StatusDelivered)
 	_, err := r.db.Pool.Exec(ctx, query, status, ids)
 	if err != nil {
 		return fmt.Errorf("NotificationPostgresRepository.UpdateNotificationsStatus error: %w", err)

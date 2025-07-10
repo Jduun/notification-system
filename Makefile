@@ -28,3 +28,9 @@ lint:
 
 fmt:
 	golangci-lint fmt
+
+mockgen:
+	mockgen -source=internal/repositories/repositories.go -destination=internal/repositories/mocks/repositories.go -package=repomocks
+
+swag:
+	swag init -g cmd/app/main.go

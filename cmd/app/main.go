@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"notification_system/config"
+	_ "notification_system/docs"
 	"notification_system/internal/messaging"
 	"notification_system/migrations"
 	"notification_system/pkg/database"
@@ -32,11 +33,11 @@ func main() {
 		}
 	}()
 
-	sender := messaging.NewSender(cfg.NotificationTopicName, db)
+	sender := messaging.NewNotificationSender(cfg, db)
 	ctxSender, cancelSender := context.WithCancel(context.Background())
-	sender.StartProcessNotifications(ctxSender, time.Duration(cfg.SenderHandlePeriodSeconds)*time.Second)
+	sender.StartProcessNotifications(ctxSender, time.Duration(cfg.SenderHandlePeriodMs)*time.Millisecond)
 
-	receiver := messaging.NewReceiver(cfg.NotificationTopicName, cfg.ConsumerGroupID, db)
+	receiver := messaging.NewNotificationReceiver(cfg, db)
 	ctxReceiver, cancelReceiver := context.WithCancel(context.Background())
 	receiver.StartProcessNotifications(ctxReceiver)
 

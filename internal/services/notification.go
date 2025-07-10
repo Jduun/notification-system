@@ -23,7 +23,7 @@ func NewNotificationServiceImpl(notificationRepo repositories.NotificationReposi
 	}
 }
 
-func (s *NotificationServiceImpl) GetNotificationByID(ctx context.Context, id uuid.UUID) (*dto.NotificationResponse, error) {
+func (s *NotificationServiceImpl) GetNotificationByID(ctx context.Context, id uuid.UUID) (*dto.Notification, error) {
 	notification, err := s.notificationRepo.GetNotificationByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repositories.ErrNotFound) {
@@ -35,7 +35,7 @@ func (s *NotificationServiceImpl) GetNotificationByID(ctx context.Context, id uu
 	return notificationResponse, nil
 }
 
-func (s *NotificationServiceImpl) GetNewNotifications(ctx context.Context, limit int) ([]*dto.NotificationResponse, error) {
+func (s *NotificationServiceImpl) GetNewNotifications(ctx context.Context, limit uint) ([]*dto.Notification, error) {
 	notifications, err := s.notificationRepo.GetNewNotifications(ctx, limit)
 	if err != nil {
 		if errors.Is(err, repositories.ErrMaxBatchSizeExceeded) {
@@ -47,7 +47,7 @@ func (s *NotificationServiceImpl) GetNewNotifications(ctx context.Context, limit
 	return notificationsResponse, nil
 }
 
-func (s *NotificationServiceImpl) GetNotificationsByIDs(ctx context.Context, ids []uuid.UUID) ([]*dto.NotificationResponse, error) {
+func (s *NotificationServiceImpl) GetNotificationsByIDs(ctx context.Context, ids []uuid.UUID) ([]*dto.Notification, error) {
 	notifications, err := s.notificationRepo.GetNotificationsByIDs(ctx, ids)
 	if err != nil {
 		if errors.Is(err, repositories.ErrMaxBatchSizeExceeded) {

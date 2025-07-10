@@ -14,20 +14,25 @@ Go, Gin, PostgreSQL, Apache Kafka, Docker
 1. Clone the repository:
    ```bash
    git clone https://github.com/Jduun/notification-system.git
+   ```
+
+2. Navigate to the project folder:
+   ```bash
    cd notification_system
    ```
 
-2. Set environment variables:
+3. Set environment variables:
    ```bash
-   cp .env.example .env
+   make env
    nano .env
    ```
 
-3. Build application:
+4. Build and run application:
    ```bash
-   docker-compose up -d
+   make build
    ```
-4. Run tests:
+   
+5. Run tests:
    ```bash
-   go test -count=1 -v ./tests
+   make test
    ```
